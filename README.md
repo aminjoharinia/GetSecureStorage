@@ -1,5 +1,7 @@
 # GetSecureStorage
+
 With WASM Support
+
 A cryptography Secure version of GetStorage originally written by Jonny Borges (https://github.com/jonataslaw/get_storage).
 
 GetSecureStorage is a secure, fast, extra light and synchronous key-value in memory, which backs up data to disk at each operation. It is written entirely in Dart and is based on the Cryptography dart package.
