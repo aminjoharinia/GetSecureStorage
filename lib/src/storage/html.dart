@@ -1,23 +1,21 @@
 import 'dart:async';
 import 'dart:convert';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+import 'package:web/web.dart' as web;
 import 'package:get_secure_storage/get_secure_storage.dart';
 
 class StorageImpl {
   StorageImpl(this.fileName, [this.path]);
-  html.Storage get localStorage => html.window.localStorage;
+  web.Storage get localStorage => web.window.localStorage;
 
   final String? path;
   final String fileName;
   StringCallback _encrypt = (input) async => input;
   StringCallback _decrypt = (input) async => input;
 
-  ValueStorage<Map<String, dynamic>> subject =
-      ValueStorage<Map<String, dynamic>>(<String, dynamic>{});
+  ValueStorage<Map<String, dynamic>> subject = ValueStorage<Map<String, dynamic>>(<String, dynamic>{});
 
   void clear() {
-    localStorage.remove(fileName);
+    localStorage.removeItem(fileName);
     subject.value?.clear();
 
     subject
@@ -29,7 +27,7 @@ class StorageImpl {
   static deleteContainer(container, [String? path]) {}
 
   Future<bool> _exists() async {
-    return localStorage.containsKey(fileName);
+    return localStorage.getItem(fileName) != null;
   }
 
   Future<void> flush() {
@@ -48,8 +46,7 @@ class StorageImpl {
     return subject.value!.values as T;
   }
 
-  Future<void> init(Map<String, dynamic>? initialData, StringCallback encrypt,
-      StringCallback decrypt) async {
+  Future<void> init(Map<String, dynamic>? initialData, StringCallback encrypt, StringCallback decrypt) async {
     _encrypt = encrypt;
     _decrypt = decrypt;
     subject.value = initialData ?? <String, dynamic>{};
@@ -65,35 +62,24 @@ class StorageImpl {
     subject
       ..value?.remove(key)
       ..changeValue(key, null);
-    //  return _writeToStorage(subject.value);
   }
 
   void write(String key, dynamic value) {
     subject
       ..value![key] = value
       ..changeValue(key, value);
-    //return _writeToStorage(subject.value);
   }
-
-  // void writeInMemory(String key, dynamic value) {
-
-  // }
 
   Future<void> _writeToStorage(Map<String, dynamic> data) async {
     final subjectValue = await _encrypt(json.encode(subject.value));
-    localStorage.update(fileName, (val) => subjectValue,
-        ifAbsent: () => subjectValue);
+    localStorage.setItem(fileName, subjectValue);
   }
 
   Future<void> _readFromStorage() async {
-    final dataFromLocal = localStorage.entries.firstWhereOrNull(
-      (value) {
-        return value.key == fileName;
-      },
-    );
-    if (dataFromLocal != null) {
-      String dataValue = await _decrypt(dataFromLocal.value);
-      subject.value = json.decode(dataValue) as Map<String, dynamic>;
+    final dataValue = localStorage.getItem(fileName);
+    if (dataValue != null) {
+      String decryptedData = await _decrypt(dataValue);
+      subject.value = json.decode(decryptedData) as Map<String, dynamic>;
     } else {
       await _writeToStorage(<String, dynamic>{});
     }
